@@ -1,0 +1,8 @@
+qnote:
+    resource: "@QnoteBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
+app:
+    resource: "@AppBundle/Controller/"
+    type:     annotation
