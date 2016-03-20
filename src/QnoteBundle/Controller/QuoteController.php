@@ -38,65 +38,67 @@ class QuoteController extends Controller
     /**
      * Creates a new Quote entity.
      *
-     * @Route("/", name="quote_create")
+     * @Route("/{id}/new", name="quote_create")
      * @Method("POST")
      * @Template("QnoteBundle:Quote:new.html.twig")
      */
-    public function createAction(Request $request)
+    public function createAction(Request $request, $id)
     {
+        $repo = $this->getDoctrine()->getRepository('QnoteBundle:User');
+        $user = $repo->find($id);
+
         $entity = new Quote();
-        $form = $this->createCreateForm($entity);
+        $form = $this->createCreateForm($entity, $this->generateUrl('quote_new', ['id' => $id]));
         $form->handleRequest($request);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted())
+        {
             $em = $this->getDoctrine()->getManager();
+
+            $entity->setUserId($user);
+            $user->addQuote($entity);
+
             $em->persist($entity);
             $em->flush();
-
-            return $this->redirect($this->generateUrl('quote_show', array('id' => $entity->getId())));
         }
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
+
+        return $this->redirectToRoute('quote_show', ['id' => $entity->getId()]);
     }
 
     /**
      * Creates a form to create a Quote entity.
      *
-     * @param Quote $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
      */
-    private function createCreateForm(Quote $entity)
+    private function createCreateForm($entity, $action)
     {
-        $form = $this->createForm(new QuoteType(), $entity, array(
-            'action' => $this->generateUrl('quote_create'),
-            'method' => 'POST',
-        ));
+        $form = $this->createFormBuilder($entity);
+        $form->add('quoteBody', 'text');
+        $form->add('quoteAuthor', 'text');
+        $form->add('add quote', 'submit', ['label' => 'add new quote']);
+        $form->setAction($action);
 
-        $form->add('submit', 'submit', array('label' => 'Create'));
+        $entityForm = $form->getForm();
 
-        return $form;
+        return $entityForm;
     }
 
     /**
      * Displays a form to create a new Quote entity.
      *
-     * @Route("/new", name="quote_new")
+     * @Route("/{id}/new", name="quote_new")
      * @Method("GET")
      * @Template()
      */
-    public function newAction()
+    public function newAction($id)
     {
         $entity = new Quote();
-        $form   = $this->createCreateForm($entity);
+        $entityForm   = $this->createCreateForm($entity, $this->generateUrl('quote_new', ['id' => $id]));
 
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        );
+        $repo = $this->getDoctrine()->getRepository('QnoteBundle:User');
+        $user = $repo->find($id);
+
+        return ['form' => $entityForm->createView(), 'user' => $user];
     }
 
     /**
